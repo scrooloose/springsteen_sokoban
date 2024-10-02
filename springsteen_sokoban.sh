@@ -17,7 +17,7 @@ function init_game_from_file() {
 
     # init board grid
     while IFS= read -r line; do
-        map_row=$(echo "$line" | sed 's/./&;/g')
+        map_row=$(echo "$line")
         board_grid+=("$map_row")
     done < "$fname"
 
@@ -27,11 +27,10 @@ function init_game_from_file() {
 
 function init_player_start_xy() {
     for (( y = 0; y < ${#board_grid[@]}; y++ )); do
-        row_string=${board_grid[$y]}
-        IFS=";" read -r -a row <<< "$row_string"
+        row="${board_grid[$y]}"
 
-        for (( x = 0; x < ${#row[@]}; x++ )); do
-            if [[ "${row[$x]}" == "$PLAYER" ]]; then
+        for (( x = 0; x < ${#row}; x++ )); do
+            if [[ "${row:x:1}" == "$PLAYER" ]]; then
                 player_x=$x
                 player_y=$y
                 return 0
@@ -43,45 +42,39 @@ function init_player_start_xy() {
 }
 
 function init_goal_squares() {
-    for (( y = 0; y < ${#board_grid[@]}; y++ )); do
-        row_string=${board_grid[$y]}
-        IFS=";" read -r -a row <<< "$row_string"
+    for (( y = 0; y < "${#board_grid[@]}"; y++ )); do
+        row=${board_grid[$y]}
 
-        for (( x = 0; x < ${#row[@]}; x++ )); do
-            if [[ "${row[$x]}" == "$GOAL" ]]; then
+        for (( x = 0; x < ${#row}; x++ )); do
+            if [[ "${row:x:1}" == "$GOAL" ]]; then
                 goal_squares+=("${x},${y}")
             fi
         done
     done
 
+    echo "${goal_squares[@]}"
     return 1
 }
 
 function render_board() {
     for row in "${board_grid[@]}"; do
-        echo "$row" | sed 's/;//g'
+        echo "$row"
     done
 }
 
 function tile_at() {
     local x=$1 y=$2
 
-    local row_string=${board_grid[$y]}
-    local row=()
-    IFS=";" read -r -a row <<< "$row_string"
-
-    echo "${row[$x]}"
+    local row="${board_grid[$y]}"
+    echo "${row:x:1}"
 }
 
 function set_tile() {
     local x=$1 y=$2 new_val=$3
 
-    local row_string=${board_grid[$y]}
-    local row=()
-    IFS=";" read -r -a row <<< "$row_string"
-
-    row[$x]="$new_val"
-    board_grid[$y]=$(IFS=";" ; echo "${row[*]}")
+    local row="${board_grid[$y]}"
+    local new_row="${row:0:x}${new_val}${row:x+1}"
+    board_grid[$y]="$new_row"
 }
 
 function handle_keypress() {
@@ -93,7 +86,6 @@ function handle_keypress() {
         handle_move_attempt 0 -1
     elif [[ $key == "h" ]]; then
         handle_move_attempt -1 0
-        set_tile $player_x $player_y "$PLAYER"
     elif [[ $key == "l" ]]; then
         handle_move_attempt 1 0
     fi
@@ -136,7 +128,7 @@ function is_walkable() {
 function handle_player_leaving_square() {
     local x=$1 y=$2
 
-    for goal_square in ${goal_squares[*]}; do
+    for goal_square in ${goal_squares[@]}; do
         goal_x=${goal_square/,*/}
         goal_y=${goal_square/*,/}
 
@@ -150,7 +142,7 @@ function handle_player_leaving_square() {
 }
 
 function has_won() {
-    for goal_square in ${goal_squares[*]}; do
+    for goal_square in ${goal_squares[@]}; do
         goal_x=${goal_square/,*/}
         goal_y=${goal_square/*,/}
 
@@ -173,7 +165,8 @@ function main_loop() {
         render_board
 
         if $(has_won); then
-            echo "\n\nYou win!"
+            echo ""
+            echo "You win!"
         fi
     done
 }
