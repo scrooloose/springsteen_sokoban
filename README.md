@@ -16,4 +16,5 @@ usage: ./springsteen_sokoban.sh levels/<level-file-name>
 
 Use the vim movement keys to move your character (the '@' symbol) around.
 Push all the crates (the 'o' characters) onto the goal squares (the '.' symbols) to win.
+Press r to restart the level.
 ```
