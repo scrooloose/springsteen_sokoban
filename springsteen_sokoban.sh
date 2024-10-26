@@ -1,6 +1,7 @@
 #!/bin/bash
 
 PROGRAM_NAME=$0
+LEVEL_NAME=$1
 PLAYER="@"
 CRATE="o"
 GOAL="."
@@ -88,6 +89,8 @@ function handle_keypress() {
         handle_move_attempt -1 0
     elif [[ $key == "l" ]]; then
         handle_move_attempt 1 0
+    elif [[ $key == "r" ]]; then
+        restart_level
     fi
 }
 
@@ -155,9 +158,22 @@ function has_won() {
     return 0
 }
 
-function main_loop() {
+function restart_level() {
+    board_grid=()
+    goal_squares=()
+
+    init_game_from_file "$LEVEL_NAME"
+
     clear
     render_board
+}
+
+function start_level () {
+    restart_level
+    main_loop
+}
+
+function main_loop() {
     while true; do
         IFS= read -s -n 1 key_press
         handle_keypress "$key_press"
@@ -176,6 +192,7 @@ function usage() {
     echo ""
     echo "Use the vim movement keys to move your character (the '$PLAYER' symbol) around."
     echo "Push all the crates (the '$CRATE' characters) onto the goal squares (the '$GOAL' symbols) to win."
+    echo "Press r to restart the level."
     exit 1
 }
 
@@ -183,5 +200,4 @@ if [[ ! -e $1 ]]; then
     usage
 fi
 
-init_game_from_file "$1"
-main_loop
+start_level
